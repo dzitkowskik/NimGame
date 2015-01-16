@@ -12,6 +12,8 @@ let windowWidth = 1024
 let windowHeight = 1024
 let log = "log:\n"
 
+let sisde = System.Random().Next()%2
+
 // An asynchronous event queue kindly provided by Don Syme 
 type AsyncEventQueue<'T>() = 
     let mutable cont = None 
@@ -38,9 +40,9 @@ type AsyncEventQueue<'T>() =
 let window =
   new Form(Text="Web Source Length", Size=Size(windowWidth,windowHeight))
 
-let logBox =
-  new TextBox(Location=Point(512,512),Size=Size(400,400))
-
+let logBox = new TextBox(Location=Point(512,512),Size=Size(400,400))
+let heapsLabel = new Label(Location=Point(20,20), Size=Size(400,600))
+ 
 let heapMoveBox =
   new TextBox(Location=Point(600,100),Size=Size(100,50),
               MaximumSize=Size(100,50))
@@ -87,14 +89,16 @@ let rec ready() =
         let! msg = ev.Receive()
         match msg with
         | Begin   -> 
-            let side = playerStarting
-            if side=0 then return! aiMove(getMatches)
-            else return! pMove(getMatches)
+            let side = System.Random().Next()%2
+            let matches = getMatches
+            heapsLabel.Text <- getHeapsText matches
+            if side=0 then return! aiMove(matches)
+            else return! pMove(matches)
         | Cancelled -> return! ready()
-        | _         -> failwith("ready: unexpected message")}
-  
+        | _         -> failwith("ready: unexpected message")
+    }
 and aiMove(matches) =
-  async {
+    async {
          use ts = new CancellationTokenSource()
 
           // start the load
@@ -117,40 +121,40 @@ and aiMove(matches) =
          | Cancelled  -> 
             ts.Cancel()
             return! cancelling()
-         | _          -> failwith("loading: unexpected message")}
-
+         | _          -> failwith("loading: unexpected message")
+     }
 and pMove(matches) =
     async {
-    disable [startButton] 
+        disable [startButton] 
 
-    let! msg = ev.Receive()
-    match msg with
-    | Move(h, c) ->
-        let m = applyMove (h, c) matches
-        if checkWin(m) then return! finished("P")
-        else return! aiMove(m)
-    | Error      -> return! finished("Error")
-    | Cancelled  -> return! cancelling()
-    | _          -> failwith("loading: unexpected message")}
-
+        let! msg = ev.Receive()
+        match msg with
+        | Move(h, c) ->
+            let m = applyMove (h, c) matches
+            if checkWin(m) then return! finished("P")
+            else return! aiMove(m)
+        | Error      -> return! finished("Error")
+        | Cancelled  -> return! cancelling()
+        | _          -> failwith("loading: unexpected message")
+    }
 and cancelling() =
-  async {
-         
+    async {
          disable [startButton; moveButton; cancelButton]
          let! msg = ev.Receive()
          match msg with
          | Cancelled | Error | Move _ ->
                    return! finished("Cancelled")
-         | _    ->  failwith("cancelling: unexpected message")}
-
+         | _    ->  failwith("cancelling: unexpected message")
+     }
 and finished(s) =
-  async {
+    async {
          
          disable [moveButton; cancelButton]
          let! msg = ev.Receive()
          match msg with
          | Begin -> return! ready()
-         | _     ->  failwith("finished: unexpected message")}
+         | _     ->  failwith("finished: unexpected message")
+     }
 
 // Initialization
 window.Controls.Add logBox
@@ -159,6 +163,7 @@ window.Controls.Add heapMoveBox
 window.Controls.Add startButton
 window.Controls.Add moveButton
 window.Controls.Add cancelButton
+window.Controls.Add heapsLabel
 startButton.Click.Add (fun _ -> ev.Post (Begin))
 moveButton.Click.Add (fun _ -> ev.Post (Move (Convert.ToInt32(heapMoveBox.Text), Convert.ToInt32(numMoveBox.Text))))
 cancelButton.Click.Add (fun _ -> ev.Post Cancelled)

@@ -1,13 +1,11 @@
 ﻿module Game
 
+open System
+
 let getMatches = 
     let rnd = System.Random()
-    let count = rnd.Next()
+    let count = rnd.Next()%5 + 2 
     List.init count (fun _ -> rnd.Next()%100)
-
-let playerStarting =
-    let rnd = System.Random()
-    rnd.Next()%2
 
 let makeAiMove matches =
     // TODO: AI intelligence and move making
@@ -21,4 +19,6 @@ let applyMove (heap, num) matches =
     matches |> List.mapi (fun i x -> if heap=i then x-num else x)
 
 let getHeapsText matches = 
-
+    matches 
+    |> List.mapi (fun i x -> i.ToString()+") "+x.ToString())
+    |> String.concat "\n"
