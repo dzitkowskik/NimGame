@@ -1,5 +1,0 @@
-/Users/ghash/Programowanie/F#/NimGame/NimGame/obj/x86/Debug/.NETFramework,Version=v4.0.AssemblyAttribute.fs
-/Users/ghash/Programowanie/F#/NimGame/NimGame/bin/Debug/NimGame.exe.mdb
-/Users/ghash/Programowanie/F#/NimGame/NimGame/bin/Debug/NimGame.exe
-/Users/ghash/Programowanie/F#/NimGame/NimGame/obj/x86/Debug/NimGame.exe
-/Users/ghash/Programowanie/F#/NimGame/NimGame/obj/x86/Debug/NimGame.exe.mdb
