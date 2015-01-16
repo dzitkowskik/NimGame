@@ -9,8 +9,8 @@ open System.Drawing
 
 open Game
 
-let windowWidth = 1024
-let windowHeight = 1024
+let windowWidth = 512
+let windowHeight = 512
 
 let logBuilder = System.Text.StringBuilder()
 let sisde = System.Random().Next()%2
@@ -44,30 +44,31 @@ let window =
   new Form(Text="Web Source Length", Size=Size(windowWidth,windowHeight))
 
 let logBox = 
-    new TextBox(Location=Point(512,512),Size=Size(400,400),
-        Multiline=true)
+    new TextBox(Location=Point(windowWidth/2,windowHeight/2),
+        Size=Size(windowWidth/2-50,windowHeight/2-50), Multiline=true,
+        ScrollBars = ScrollBars.Vertical)
 
 let heapsLabel = 
-    new Label(Location=Point(20,20), Size=Size(400,600), Font=labelFont)
- 
-let heapMoveBox =
-  new TextBox(Location=Point(600,100),Size=Size(100,50),
-              MaximumSize=Size(100,50))
-
-let numMoveBox =
-  new TextBox(Location=Point(600,250),Size=Size(100,50),
-              MaximumSize=Size(100,50))
+    new Label(Location=Point(20,20), Size=Size(windowWidth/3,windowHeight/3), Font=labelFont)
 
 let startButton =
-  new Button(Location=Point(50,650),MinimumSize=Size(100,50),
+  new Button(Location=Point(50,windowHeight/2),MinimumSize=Size(100,50),
               MaximumSize=Size(100,50),Text="START")
 
 let cancelButton =
-  new Button(Location=Point(50,750),MinimumSize=Size(100,50),
+  new Button(Location=Point(50,windowHeight/2+100),MinimumSize=Size(100,50),
               MaximumSize=Size(100,50),Text="CANCEL")
 
+let heapMoveBox =
+  new TextBox(Location=Point(windowWidth/2+100,50),Size=Size(100,50),
+              MaximumSize=Size(100,50))
+
+let numMoveBox =
+  new TextBox(Location=Point(windowWidth/2+100,100),Size=Size(100,50),
+              MaximumSize=Size(100,50))
+
 let moveButton =
-  new Button(Location=Point(800,100),MinimumSize=Size(100,50),
+  new Button(Location=Point(windowWidth/2+100,150),MinimumSize=Size(100,50),
               MaximumSize=Size(100,50),Text="MOVE")
 
 let disable bs = 
@@ -92,6 +93,8 @@ let ev = AsyncEventQueue()
 let updateLog text =
     logBuilder.AppendLine(text) |> ignore
     logBox.Text <- logBuilder.ToString()
+    logBox.SelectionStart <- logBox.Text.Length
+    logBox.ScrollToCaret()
 
 let rec ready() = 
     async {
@@ -190,9 +193,13 @@ window.Controls.Add startButton
 window.Controls.Add moveButton
 window.Controls.Add cancelButton
 window.Controls.Add heapsLabel
-startButton.Click.Add (fun _ -> ev.Post (Begin))
-moveButton.Click.Add (fun _ -> ev.Post (Move (Convert.ToInt32(heapMoveBox.Text), Convert.ToInt32(numMoveBox.Text))))
-cancelButton.Click.Add (fun _ -> ev.Post Cancelled)
+startButton.Click.Add (fun _ -> if startButton.Enabled then ev.Post (Begin))
+moveButton.Click.Add (fun _ -> 
+    if moveButton.Enabled then
+        ev.Post (Move (Convert.ToInt32(heapMoveBox.Text), Convert.ToInt32(numMoveBox.Text))))
+cancelButton.Click.Add (fun _ -> 
+    if cancelButton.Enabled then
+        ev.Post Cancelled)
 
 // Start
 Async.StartImmediate (ready())
