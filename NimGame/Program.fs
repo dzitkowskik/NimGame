@@ -1,6 +1,7 @@
 ﻿module Program 
 
 open System 
+open System.Text
 open System.Net 
 open System.Threading 
 open System.Windows.Forms 
@@ -10,8 +11,8 @@ open Game
 
 let windowWidth = 1024
 let windowHeight = 1024
-let log = "log:\n"
 
+let logBuilder = System.Text.StringBuilder()
 let sisde = System.Random().Next()%2
 
 // An asynchronous event queue kindly provided by Don Syme 
@@ -36,12 +37,18 @@ type AsyncEventQueue<'T>() =
         Async.FromContinuations (fun (cont,econt,ccont) -> 
             tryListen cont)
 
+let labelFont = new Font("Times New Roman", 16.0f, FontStyle.Bold);
+
 // The window part
 let window =
   new Form(Text="Web Source Length", Size=Size(windowWidth,windowHeight))
 
-let logBox = new TextBox(Location=Point(512,512),Size=Size(400,400))
-let heapsLabel = new Label(Location=Point(20,20), Size=Size(400,600))
+let logBox = 
+    new TextBox(Location=Point(512,512),Size=Size(400,400),
+        Multiline=true)
+
+let heapsLabel = 
+    new Label(Location=Point(20,20), Size=Size(400,600), Font=labelFont)
  
 let heapMoveBox =
   new TextBox(Location=Point(600,100),Size=Size(100,50),
@@ -82,15 +89,20 @@ type Message =
 // The dialogue automaton 
 let ev = AsyncEventQueue()
 
+let updateLog text =
+    logBuilder.AppendLine(text) |> ignore
+    logBox.Text <- logBuilder.ToString()
+
 let rec ready() = 
     async {
-        logBox.Text <- log
+        logBuilder.Clear() |> ignore
         disable [cancelButton; moveButton]
         let! msg = ev.Receive()
         match msg with
         | Begin   -> 
+            updateLog "New game started"
             let side = System.Random().Next()%2
-            let matches = getMatches
+            let! matches = getMatches
             heapsLabel.Text <- getHeapsText matches
             if side=0 then return! aiMove(matches)
             else return! pMove(matches)
@@ -114,10 +126,14 @@ and aiMove(matches) =
          let! msg = ev.Receive()
          match msg with
          | Move(h, c) ->
-             let m = applyMove (h, c) matches
-             if checkWin(m) then return! finished("AI")
-             else return! pMove(m)
-         | Error      -> return! finished("Error")
+             if checkMove (h, c) matches then
+                 updateLog ("Ai subtracted "+c.ToString()+" from heap "+h.ToString())
+                 let m = applyMove (h, c) matches
+                 heapsLabel.Text <- getHeapsText m
+                 if checkWin(m) then return! finished("AI","")
+                 else return! pMove(m)
+             else return! finished("Player","AI made wrong move!")
+         | Error      -> return! finished("","Error")
          | Cancelled  -> 
             ts.Cancel()
             return! cancelling()
@@ -130,29 +146,39 @@ and pMove(matches) =
         let! msg = ev.Receive()
         match msg with
         | Move(h, c) ->
-            let m = applyMove (h, c) matches
-            if checkWin(m) then return! finished("P")
-            else return! aiMove(m)
-        | Error      -> return! finished("Error")
+            if checkMove (h, c) matches then
+                updateLog ("Player subtracted "+c.ToString()+" from heap "+h.ToString())
+                let m = applyMove (h, c) matches
+                heapsLabel.Text <- getHeapsText m
+                if checkWin(m) then return! finished("Player","")
+                else return! aiMove(m)
+            else return! finished("AI","Player made wrong move!")
+        | Error      -> return! finished("","Error")
         | Cancelled  -> return! cancelling()
         | _          -> failwith("loading: unexpected message")
     }
 and cancelling() =
     async {
-         disable [startButton; moveButton; cancelButton]
-         let! msg = ev.Receive()
-         match msg with
-         | Cancelled | Error | Move _ ->
-                   return! finished("Cancelled")
-         | _    ->  failwith("cancelling: unexpected message")
-     }
-and finished(s) =
-    async {
-         
+         updateLog ("Game cancelled")
          disable [moveButton; cancelButton]
          let! msg = ev.Receive()
          match msg with
-         | Begin -> return! ready()
+         | Begin -> 
+             ev.Post Begin
+             return! ready()
+         | _     ->  failwith("cancelling: unexpected message")
+     }
+and finished(s, err) =
+    async {
+         if err<> "" then updateLog (err)
+         if s<> "" then updateLog ("Game won by "+s)
+
+         disable [moveButton; cancelButton]
+         let! msg = ev.Receive()
+         match msg with
+         | Begin ->
+             ev.Post Begin
+             return! ready()
          | _     ->  failwith("finished: unexpected message")
      }
 
