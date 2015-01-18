@@ -41,15 +41,18 @@ let labelFont = new Font("Times New Roman", 16.0f, FontStyle.Bold);
 
 // The window part
 let window =
-  new Form(Text="Web Source Length", Size=Size(windowWidth,windowHeight))
+  new Form(Text="Web Source Length", Size=Size(windowWidth,windowHeight),
+    MinimumSize=Size(windowWidth,windowHeight), MaximumSize=Size(windowWidth,windowHeight),
+    FormBorderStyle=FormBorderStyle.FixedDialog, MaximizeBox=false)
 
 let logBox = 
     new TextBox(Location=Point(windowWidth/2,windowHeight/2),
         Size=Size(windowWidth/2-50,windowHeight/2-50), Multiline=true,
-        ScrollBars = ScrollBars.Vertical)
+        ScrollBars = ScrollBars.Vertical, ReadOnly=true)
 
 let heapsLabel = 
-    new Label(Location=Point(20,20), Size=Size(windowWidth/3,windowHeight/3), Font=labelFont)
+    new Label(Location=Point(20,20), Size=Size(windowWidth/3,windowHeight/3),
+        Font=labelFont)
 
 let startButton =
   new Button(Location=Point(50,windowHeight/2),MinimumSize=Size(100,50),
@@ -59,13 +62,22 @@ let cancelButton =
   new Button(Location=Point(50,windowHeight/2+100),MinimumSize=Size(100,50),
               MaximumSize=Size(100,50),Text="CANCEL")
 
+let isNumKey (e:KeyPressEventArgs) = 
+    let back = (int Keys.Back)
+    let key = int e.KeyChar
+    key<>back && (key < 48 || key > 57)
+
 let heapMoveBox =
-  new TextBox(Location=Point(windowWidth/2+100,50),Size=Size(100,50),
-              MaximumSize=Size(100,50))
+    new NumericUpDown(Location=Point(windowWidth/2+100,50),Size=Size(100,50),
+              MaximumSize=Size(100,50), Value=1m, Increment=1m, DecimalPlaces=0,
+              Minimum=0m, Maximum=20m)
+heapMoveBox.KeyPress.Add (fun e -> if isNumKey e then e.Handled <- true)
 
 let numMoveBox =
-  new TextBox(Location=Point(windowWidth/2+100,100),Size=Size(100,50),
-              MaximumSize=Size(100,50))
+    new NumericUpDown(Location=Point(windowWidth/2+100,100),Size=Size(100,50),
+              MaximumSize=Size(100,50), Value=1m, Increment=1m, DecimalPlaces=0,
+              Minimum=0m, Maximum=20m)
+numMoveBox.KeyPress.Add (fun e -> if isNumKey e then e.Handled <- true)
 
 let moveButton =
   new Button(Location=Point(windowWidth/2+100,150),MinimumSize=Size(100,50),
@@ -76,6 +88,12 @@ let disable bs =
         b.Enabled  <- true
     for (b:Button) in bs do 
         b.Enabled  <- false
+       
+let disableNum n =
+    for x in [numMoveBox; heapMoveBox] do
+        x.Enabled <- true
+    for (y:NumericUpDown) in n do 
+        y.Enabled  <- false
 
 // An enumeration of the possible events 
 type Message =
@@ -99,7 +117,8 @@ let updateLog text =
 let rec ready() = 
     async {
         logBuilder.Clear() |> ignore
-        disable [cancelButton; moveButton]
+        disable [cancelButton; moveButton;]
+        disableNum [numMoveBox; heapMoveBox]
         let! msg = ev.Receive()
         match msg with
         | Begin   -> 
@@ -125,6 +144,7 @@ and aiMove(matches) =
               ts.Token)
 
          disable [startButton; moveButton]   
+         disableNum []
 
          let! msg = ev.Receive()
          match msg with
@@ -145,6 +165,7 @@ and aiMove(matches) =
 and pMove(matches) =
     async {
         disable [startButton] 
+        disableNum []
 
         let! msg = ev.Receive()
         match msg with
@@ -163,7 +184,10 @@ and pMove(matches) =
 and cancelling() =
     async {
          updateLog ("Game cancelled")
+
          disable [moveButton; cancelButton]
+         disableNum [numMoveBox; heapMoveBox]
+
          let! msg = ev.Receive()
          match msg with
          | Begin -> 
@@ -177,6 +201,8 @@ and finished(s, err) =
          if s<> "" then updateLog ("Game won by "+s)
 
          disable [moveButton; cancelButton]
+         disableNum [numMoveBox; heapMoveBox]
+
          let! msg = ev.Receive()
          match msg with
          | Begin ->
