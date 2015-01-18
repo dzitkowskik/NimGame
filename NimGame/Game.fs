@@ -8,7 +8,7 @@ let rnd = System.Random()
 let getMatches = 
     async{
         let count = rnd.Next()%5 + 2 
-        return List.init count (fun _ -> rnd.Next()%100)}
+        return List.init count (fun _ -> rnd.Next()%20)}
 
 let maxIndex l =  
     l
