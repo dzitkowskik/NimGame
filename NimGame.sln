@@ -1,7 +1,12 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
-Project("{f2a71f9b-5d33-465a-a702-920d77279786}") = "NimGame", "NimGame\NimGame.fsproj", "{1D054AFC-CF58-4A92-AC0B-E098BADBD93F}"
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "NimGame", "NimGame\NimGame.fsproj", "{1D054AFC-CF58-4A92-AC0B-E098BADBD93F}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{6368DE0B-417E-45CA-A6DE-49A371783953}"
+	ProjectSection(SolutionItems) = preProject
+		NimGame\FetchNimGame.fs = NimGame\FetchNimGame.fs
+	EndProjectSection
 EndProject
 Project("{f2a71f9b-5d33-465a-a702-920d77279786}") = "NimGameServer", "NimGameServer\NimGameServer.fsproj", "{F73D4205-EF58-44B2-AF4B-23941477AD70}"
 EndProject
@@ -19,6 +24,9 @@ Global
 		{F73D4205-EF58-44B2-AF4B-23941477AD70}.Debug|x86.Build.0 = Debug|x86
 		{F73D4205-EF58-44B2-AF4B-23941477AD70}.Release|x86.ActiveCfg = Release|x86
 		{F73D4205-EF58-44B2-AF4B-23941477AD70}.Release|x86.Build.0 = Release|x86
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(MonoDevelopProperties) = preSolution
 		StartupItem = NimGame\NimGame.fsproj

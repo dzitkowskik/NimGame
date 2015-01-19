@@ -15,6 +15,19 @@ let windowHeight = 512
 let logBuilder = System.Text.StringBuilder()
 let sisde = System.Random().Next()%2
 
+//Expected syntax: A list of numbers, seperated by white space. Every number is the amount of matches in a heap
+let rec parseNimWebsite (text:string) heaps =
+    let i = text.IndexOf(" ")
+    printfn "%A" i
+    if i <> -1 then  
+        let nr = int (text.Substring( 0, i))
+        let rest = text.Substring( i + 1 )
+        let newHeaps = nr::heaps
+        parseNimWebsite rest newHeaps
+    else
+        (int text)::heaps
+           
+
 // An asynchronous event queue kindly provided by Don Syme 
 type AsyncEventQueue<'T>() = 
     let mutable cont = None 
@@ -83,6 +96,10 @@ let moveButton =
   new Button(Location=Point(windowWidth/2+100,150),MinimumSize=Size(100,50),
               MaximumSize=Size(100,50),Text="MOVE")
 
+let urlBox =
+  new TextBox(Location=Point(50,windowHeight/2-30),MinimumSize=Size(420,20),
+              MaximumSize=Size(700,50))
+
 let disable bs = 
     for b in [startButton;cancelButton;moveButton] do 
         b.Enabled  <- true
@@ -102,6 +119,7 @@ type Message =
   | End of bool
   | Error 
   | Cancelled
+  | HTML of string
 
 //exception UnexpectedMessage
 
@@ -124,13 +142,47 @@ let rec ready() =
         | Begin   -> 
             updateLog "New game started"
             let side = System.Random().Next()%2
-            let! matches = getMatches
-            heapsLabel.Text <- getHeapsText matches
-            if side=0 then return! aiMove(matches)
-            else return! pMove(matches)
+            if urlBox.Text.Trim().Length = 0 then
+                let! matches = getMatches
+                heapsLabel.Text <- getHeapsText matches
+                if side=0 then return! aiMove(matches)
+                else return! pMove(matches)
+            else
+                return! fetching(urlBox.Text)
+                
         | Cancelled -> return! ready()
         | _         -> failwith("ready: unexpected message")
     }
+
+and fetching(url) =
+    async{
+        //ansBox.Text <- "Downloading"
+        use ts = new CancellationTokenSource()
+        Async.StartWithContinuations
+           (async {
+            let webCl = new WebClient()
+            let! html = webCl.AsyncDownloadString(Uri url)
+            return html },
+                (fun html -> ev.Post (HTML html)) , // normal termination
+                (fun _ -> ev.Post Error) , // error (e.g. wrong url)
+                (fun _ -> ev.Post Cancelled) , // cancellation
+                ts.Token)
+
+        disable [startButton]
+
+        let! msg = ev.Receive()
+        match msg with
+        | HTML htm -> let side = System.Random().Next()%2
+                      let matches = parseNimWebsite htm []
+                      heapsLabel.Text <- getHeapsText matches
+                      if side=0 then return! aiMove(matches)
+                      else return! pMove(matches)
+        | Error -> return! finished("","Error")
+        | Cancel -> ts.Cancel()
+                    return! cancelling()
+        | _ -> failwith("loading: unexpected message")
+    }
+    
 and aiMove(matches) =
     async {
          use ts = new CancellationTokenSource()
@@ -219,6 +271,7 @@ window.Controls.Add startButton
 window.Controls.Add moveButton
 window.Controls.Add cancelButton
 window.Controls.Add heapsLabel
+window.Controls.Add urlBox
 startButton.Click.Add (fun _ -> if startButton.Enabled then ev.Post (Begin))
 moveButton.Click.Add (fun _ -> 
     if moveButton.Enabled then
