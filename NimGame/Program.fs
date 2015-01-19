@@ -82,7 +82,7 @@ and fetching(url) =
                 (fun _ -> ev.Post Cancelled) , // cancellation
                 ts.Token)
 
-        disable [startButton]
+        disable [startButton; moveButton]
 
         let! msg = ev.Receive()
         match msg with
@@ -159,6 +159,7 @@ and cancelling() =
          | Begin -> 
              ev.Post Begin
              return! ready()
+         | Cancelled -> return! ready()
          | _     ->  failwith("cancelling: unexpected message")
      }
 and finished(s, err) =
