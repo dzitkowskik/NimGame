@@ -4,10 +4,9 @@ open System
 open System.Text
 open System.Net 
 open System.Threading 
-open System.Windows.Forms 
-open System.Drawing 
 
 open Game
+open GUI
 
 let windowWidth = 512
 let windowHeight = 512
@@ -26,7 +25,6 @@ let rec parseNimWebsite (text:string) heaps =
         parseNimWebsite rest newHeaps
     else
         (int text)::heaps
-           
 
 // An asynchronous event queue kindly provided by Don Syme 
 type AsyncEventQueue<'T>() = 
@@ -263,15 +261,6 @@ and finished(s, err) =
          | _     ->  failwith("finished: unexpected message")
      }
 
-// Initialization
-window.Controls.Add logBox
-window.Controls.Add numMoveBox
-window.Controls.Add heapMoveBox
-window.Controls.Add startButton
-window.Controls.Add moveButton
-window.Controls.Add cancelButton
-window.Controls.Add heapsLabel
-window.Controls.Add urlBox
 startButton.Click.Add (fun _ -> if startButton.Enabled then ev.Post (Begin))
 moveButton.Click.Add (fun _ -> 
     if moveButton.Enabled then
@@ -279,6 +268,7 @@ moveButton.Click.Add (fun _ ->
 cancelButton.Click.Add (fun _ -> 
     if cancelButton.Enabled then
         ev.Post Cancelled)
+
 
 // Start
 Async.StartImmediate (ready())
