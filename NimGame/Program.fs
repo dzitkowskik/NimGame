@@ -7,6 +7,7 @@ open System.Threading
 
 open Game
 open GUI
+open EventQueue
 
 let windowWidth = 512
 let windowHeight = 512
@@ -118,8 +119,6 @@ type Message =
   | Error 
   | Cancelled
   | HTML of string
-
-//exception UnexpectedMessage
 
 // The dialogue automaton 
 let ev = AsyncEventQueue()

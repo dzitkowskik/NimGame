@@ -43,7 +43,6 @@ let urlBox =
   new TextBox(Location=Point(50,windowHeight/2-30),MinimumSize=Size(420,20),
               MaximumSize=Size(700,50))
 
-
               // Initialization
 window.Controls.Add logBox
 window.Controls.Add numMoveBox
@@ -53,4 +52,3 @@ window.Controls.Add moveButton
 window.Controls.Add cancelButton
 window.Controls.Add heapsLabel
 window.Controls.Add urlBox
-
