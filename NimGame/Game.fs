@@ -18,12 +18,12 @@ let maxIndex l =
 
 let makeAiMove matches =
     let m = matches |> List.fold (fun acc elem -> acc ^^^ elem) 0
-    if m=0 then (maxIndex matches, 1)
+    if m=0 then (maxIndex matches, 1), false
     else
         let temp = List.map (fun x -> x ^^^ m) matches
         let k = List.zip matches temp |> List.findIndex (fun (x, y) -> x > y)
         let value = List.nth matches k
-        (k, value - (value^^^m))
+        (k, value - (value^^^m)), true
 
 let checkMove (heap, num) matches =
     let value = List.nth matches heap

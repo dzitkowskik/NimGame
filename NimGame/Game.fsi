@@ -5,7 +5,7 @@ open System.Threading
 
 val getMatches: Async<int list>
 
-val makeAiMove : int list -> int * int
+val makeAiMove : int list -> (int * int) * bool
 
 val checkMove : heap:int * num:int -> matches: int list -> bool
 

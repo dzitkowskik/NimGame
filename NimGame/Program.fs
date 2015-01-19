@@ -7,7 +7,6 @@ open System.Threading
 open System.Windows.Forms 
 open System.Drawing 
 
-
 open Game
 open GUI
 open EventQueue
@@ -45,6 +44,9 @@ let updateLog text =
     logBox.Text <- logBuilder.ToString()
     logBox.SelectionStart <- logBox.Text.Length
     logBox.ScrollToCaret()
+
+
+let mutable aiTease = true
 
 let rec ready() = 
     async {
@@ -92,11 +94,11 @@ and fetching(url) =
                       if side=0 then return! aiMove(matches)
                       else return! pMove(matches)
         | Error -> return! finished("","Error")
-        | Cancel -> ts.Cancel()
-                    return! cancelling()
+        | Cancelled -> 
+            ts.Cancel()
+            return! cancelling()
         | _ -> failwith("loading: unexpected message")
     }
-    
 and aiMove(matches) =
     async {
          use ts = new CancellationTokenSource()
@@ -104,7 +106,11 @@ and aiMove(matches) =
           // start the load
          Async.StartWithContinuations
              (async { return makeAiMove(matches) },
-              (fun result -> ev.Post (Move result)),
+              (fun result ->
+                  if(aiTease && snd result) then
+                    updateLog("AI: you will lose >:)")
+                    aiTease <- false
+                  ev.Post (Move (fst result))),
               (fun _ -> ev.Post Error),
               (fun _ -> ev.Post Cancelled),
               ts.Token)
